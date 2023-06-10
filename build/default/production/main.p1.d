@@ -1,4 +1,4 @@
 build/default/production/main.p1:  \
 main.c  \
-i2c.h  \
-config.h 
+config.h  \
+i2c.h 

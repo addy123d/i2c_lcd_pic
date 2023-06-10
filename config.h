@@ -66,6 +66,6 @@
 //#include <xc.h>
 
     //Define the Fosc
-    #define _XTAL_FREQ 8000000
+    #define _XTAL_FREQ 64000000
     
 #endif

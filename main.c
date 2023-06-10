@@ -1,16 +1,17 @@
 /*
- * File:   main.c
- * Author: Aditya Chaudhary
- *
- * Created on May 30, 2023, 3:17 PM
+ * Digital Timer Firmware based on PIC18F25K22
+ * 10-06-2023 by Aditya Chaudhary <ac3101282@gmail.com>
  */
 
-
-#include <xc.h>
-#include <pic18f25k22.h>
-#include "i2c.h"
 #include "config.h"
+#include <xc.h>
+#include <math.h>
+#include "i2c.h"
 
+
+#define PORT 1
+
+/*LCD Function Declarations*/
 #define LCD_BACKLIGHT         0x08
 #define LCD_NOBACKLIGHT       0x00
 #define LCD_FIRST_ROW         0x80
@@ -31,7 +32,7 @@
 #define LCD_SHIFT_RIGHT       0x1E
 #define LCD_TYPE              2 // 0 -> 5x7 | 1 -> 5x10 | 2 -> 2 lines
 
-
+/* LCD Function Declaration */ 
 void LCD_Init(unsigned char I2C_Add);
 void IO_Expander_Write(unsigned char Data);
 void LCD_Write_4Bit(unsigned char Nibble);
@@ -43,9 +44,41 @@ void Backlight();
 void noBacklight();
 void LCD_SR();
 void LCD_SL();
-void LCD_Clear();
+void LCD_CLR();
 
 unsigned char RS, i2c_add, BackLight_State = LCD_BACKLIGHT;
+
+/*Function Declarations*/
+void startUpcounter();                                         /* starts the counter from 0.0.0.0 to 9.9.9.9 and ends with OVEr */
+void display(unsigned int buttonCounter, unsigned int update); /* display the stored EEPROM values. */
+void seven_segment_config();                                   /* turn on all the displays. */
+void seven_segment_off_config();                               /* turn off all the displays. */
+
+/*LED Function Declarations*/
+void red_led();   // turns red led on.
+void green_led(); // turns green led on.
+void blue_led();  // turns blue led on.
+
+/*Timer Function Declarations*/
+void stopTimer();   // stops timer with 00.00 on display.
+void startTimer();  // starts timer
+void stopMessage(); // display 0VEr on display.
+
+/*EEPROM Function Declarations*/
+void EEPROM_Write(unsigned char, unsigned char); /* Write byte to EEPROM */
+char EEPROM_Read(unsigned char);                 /* Read byte From EEPROM */
+
+/* Utility Function Declaration */
+unsigned char inttochar(unsigned int digit); /* converts int type to char type */
+void lcd_print(unsigned char row, unsigned char col, char Data);
+
+/*7 Segment Data array*/
+unsigned char segment[11] = {0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F}, segmentCounter;
+unsigned char segment_with_dot[11] = {0xBF, 0x86, 0xDB, 0xCF, 0xE6, 0xED, 0xFD, 0x87, 0xFF, 0xEF};
+int hour_first_digit, hour_second_digit, minute_first_digit, minute_second_digit, DEL;
+static unsigned int display_function_count = 0; // counts the number of times display function is called.
+
+/*LCD Function Declarations*/
 
 void LCD_Init(unsigned char I2C_Add)
 {
@@ -150,34 +183,685 @@ void LCD_SR()
   __delay_us(40);
 }
  
-void LCD_Clear()
+void LCD_CLR()
 {
   LCD_CMD(0x01);
   __delay_us(40);
 }
 
 
+/*
+ * led function definitions
+ * @configuration : common anode configuration
+ */
+void red_led()
+{
+    LATAbits.LATA5 = 0; // red led
 
+    LATAbits.LATA4 = 1;
+    LATAbits.LATA6 = 1;
+}
 
+void green_led()
+{
 
-void main(void) {
-    OSCCON = 0x70;  // 0b01110010 //64 MHz with PLL enabled
-    OSCTUNE = 0xC0; // 0b11000000
-    
-    I2C2_Init();
-    
-    
-    LCD_Init((0x38<<1)); // Initialize LCD module with I2C address = 0x38
-    LCD_Set_Cursor(1, 1);
-    LCD_Write_String("Loading");
-    LCD_Set_Cursor(1, 10);
-    LCD_Write_String("...");
-    
-   
+    LATAbits.LATA4 = 0; // green led
 
-    while(1){
-       
-         
+    LATAbits.LATA5 = 1;
+    LATAbits.LATA6 = 1;
+}
+
+void blue_led()
+{
+    LATAbits.LATA6 = 0; // blue led
+
+    LATAbits.LATA5 = 1;
+    LATAbits.LATA4 = 1;
+}
+
+/*
+ * 7 segment display function definitions
+ */
+
+/*
+ * @desc : turn on all displays
+ * @params : none.
+ */
+void seven_segment_config()
+{
+    /*
+    LATAbits.LATA0 = 1;
+    LATAbits.LATA1 = 1;
+    LATAbits.LATA2 = 1;
+    LATAbits.LATA3 = 1;
+     */ 
+}
+
+/*
+ * @desc : turn off all the displays.
+ * @params : none.
+ */
+void seven_segment_off_config()
+{
+    /*
+    LATAbits.LATA0 = 0;
+    LATAbits.LATA1 = 0;
+    LATAbits.LATA2 = 0;
+    LATAbits.LATA3 = 0;
+    */
+}
+
+/*
+ * @desc : read data from eeprom and start the timer as usual.
+ * @param : none.
+ */
+void startTimer()
+{
+
+    int RESET = 0;  // variable which will help to break loop, when button 3 is pressed (represents stop timer).
+    int timeUp = 0; // help to break loop, also show stop message.
+    int hour_first_flag = 0;
+    int minute_first_flag = 0;  // variable which will reset minute digits to 59.
+    int minute_second_flag = 0; // variable which will reset minute digits to 59.
+
+    /* reset all displays */
+    LATAbits.LATA0 = 0;
+    LATAbits.LATA1 = 0;
+    LATAbits.LATA2 = 0;
+    LATAbits.LATA3 = 0;
+
+    /* read data from eeprom */
+    hour_first_digit = EEPROM_Read(0x0A);  // reads data from address location 0x0A
+    hour_second_digit = EEPROM_Read(0x0B); // reads data from address location 0x0B
+
+    for (hour_first_digit = hour_first_digit; hour_first_digit > -1; hour_first_digit--) // hour first digit
+    {
+        seven_segment_config(); // turn on all displays
+
+        hour_first_flag = hour_first_flag + 1;
+
+        if (hour_first_flag > 1)
+            hour_second_digit = 9;
+
+        for (hour_second_digit = hour_second_digit; hour_second_digit > -1; hour_second_digit--) // hour second digit
+        {
+
+            minute_first_flag = minute_first_flag + 1; // For the first time it will be 0 + 1 = 1, but if it is > 1 that means timer should start from 59
+
+            seven_segment_config(); // turn on all displays
+
+            if (minute_first_flag > 1) // this means minute timer should start from 59
+            {
+                minute_first_digit = 5; // this is important
+            }
+            else // Original value passed
+            {
+                minute_first_digit = EEPROM_Read(0x0C);
+                minute_second_digit = EEPROM_Read(0x0D);
+            }
+
+            for (minute_first_digit = minute_first_digit; minute_first_digit > -1; minute_first_digit--) // minute first digit
+            {
+                minute_second_flag = minute_second_flag + 1;
+
+                if (minute_second_flag > 1)
+                    minute_second_digit = 9;
+
+                // how this will get reset to 9.
+                for (minute_second_digit = minute_second_digit; minute_second_digit > -1; minute_second_digit--) // minute second digit
+                {
+                    // check whether hour first digit and hour second digit is zero or not.
+                    // TIME OVER condition.
+                    if ((hour_first_digit == 0) && (hour_second_digit == 0) && (minute_first_digit == 0) && (minute_second_digit == 0))
+                    {
+                        timeUp = 1; // we will use different variable to represent time over.
+                        break;
+                    }
+
+                    for (DEL = 4990; DEL > 0; DEL--) // To create approximate 60 second delay, we need to pass 4975, as we are running with 64MHz.
+                    {
+
+                        green_led(); // turn green led on
+                        LATCbits.LATC3 = 1; // Turn LED panel off (relay off)
+
+                        //  DISPLAY-1 :
+                        LATAbits.LATA0 = 1;                // TURN ON DISPLAY-1
+                        PORTB = segment[hour_first_digit]; // Find Code and send it to the PORT
+                        __delay_ms(3);                     // DELAY for turning on the display
+                        LATAbits.LATA0 = 0;                // TURN OFF DISPLAY-1
+
+                        // DISPLAY-2 :
+
+                        LATAbits.LATA1 = 1;                 // TURN ON DISPLAY-2
+                        PORTB = segment[hour_second_digit]; // Find Code and send it to the PORT
+                        __delay_ms(3);                      // DELAY for turning on the display
+                        LATAbits.LATA1 = 0;                 // TURN OFF DISPLAY-2
+
+                        // MINUTE DISPLAY
+                        //  DISPLAY-3 :
+                        LATAbits.LATA2 = 1;                  // TURN ON DISPLAY-3
+                        PORTB = segment[minute_first_digit]; // Find Code and send it to the PORT
+                        __delay_ms(3);                       // DELAY for turning on the display
+                        LATAbits.LATA2 = 0;                  // TURN OFF DISPLAY-3
+
+                        // DISPLAY-4 :
+                        LATAbits.LATA3 = 1;                   // TURN ON DISPLAY-4
+                        PORTB = segment[minute_second_digit]; // Find Code and send it to the PORT
+                        __delay_ms(3);                        // DELAY for turning on the display
+                        LATAbits.LATA3 = 0;                   // TURN OFF DISPLAY-4
+
+                        LATAbits.LATA7 = 0; // buzzer - off
+
+                        if (DEL % 79 == 0) // Display dot pointer at regular intervals
+                        {
+                            LATAbits.LATA1 = 1; // TURN ON DISPLAY-2
+                            PORTB = 0x80;       // Find Code and send it to the PORT
+                            __delay_ms(3);      // DELAY for turning on the display
+                            LATAbits.LATA1 = 0; // TURN OFF DISPLAY-2
+                        }
+
+                        // Check state of stop_timer button
+                        if (PORTCbits.RC2 == 0)
+                        {
+                            RESET = 1; // Set the reset flag.
+                            break;
+                        }
+                    } // end delay loop
+
+                    if (RESET || timeUp)
+                        break;
+
+                } // End minute second digit loop
+
+                if (RESET || timeUp)
+                    break;
+
+            } // End Minute first digit loop
+
+            if (RESET || timeUp)
+                break;
+
+        } // end hour second digit loop
+    }     // end hour first digit loop
+
+    LATAbits.LATA7 = 1; // turn buzzer on
+
+    if (RESET)
+    {                // stop timer button pressed
+        stopTimer(); // call stoptimer function irrespective of timer status.
     }
+    else
+    {
+        LATCbits.LATC3 = 0; // Turn LED panel off (relay off)
+        stopMessage();      // display OVEr message and back to normal state.
+    }
+
+} // End start timer function
+
+/*
+ * @desc : display 00.00, stop the timer.
+ * @params : none.
+ */
+void stopTimer()
+{
+
+    red_led(); // red led to indicate stop timer.
+
+    LATCbits.LATC3 = 0; // Turn LED panel off (relay off)
+
+    /*Display 00.00*/
+    seven_segment_config(); // turn on all displays.
+
+    segmentCounter = 0;
+    PORTB = segment[segmentCounter]; // segment[0] = 0x3F
+    __delay_ms(100);                 // 100msec delay
+
+    LATAbits.LATA7 = 0; // buzzer - off
+}
+
+/*
+ * @desc : display OVEr, when timer ends.
+ * @params : none.
+ */
+void stopMessage()
+{
+    unsigned int DEL;
+
+    red_led(); // red led to indicate that timer is over.
+    
+    LCD_Init((0x38<<1));
+    
+    LCD_Set_Cursor(1, 7);
+    LCD_Write_String("OVER");
+    
+    LATAbits.LATA7 = 0;
+}
+
+/*
+ * @desc: starts counter at device startup : 0000 - 9999
+ * @params : none
+ */
+void startUpcounter()
+{
+    // display numbers from 0000 - 9999 on all displays.
+    seven_segment_config();
+    unsigned int displaypos, actualpos;
+
+
+
+    for (segmentCounter = 0; segmentCounter < 10; segmentCounter++)
+    {
+        LATAbits.LATA7 = 1; // buzzer - on
+
+        for(displaypos = 3; displaypos < 7; displaypos++){
+             actualpos = displaypos * 2;
+                        
+            lcd_print(1, actualpos, inttochar(segmentCounter)); /* print digits */
+            lcd_print(1, actualpos+1, '.'); /*prints dot after a number*/
+        }
+        __delay_ms(500);    /*500 sec delay*/
+
+        LATAbits.LATA7 = 0; // buzzer - off
+        __delay_ms(500);    /*500 sec delay*/
+    }
+
+    LCD_CLR();
+
+    stopMessage();
+}
+
+/* EEPROM Function Definitions */
+
+/*
+ * @desc: write data to eeprom.
+ * @params : address, data.
+ * @return : none.
+ */
+
+void EEPROM_Write(unsigned char address, unsigned char data)
+{
+    /*Write Operation*/
+    EEADR = address;      /* Write address to the EEADR register*/
+    EEDATA = data;        /* Copy data to the EEDATA register for write */
+    EECON1bits.EEPGD = 0; /* Access data EEPROM memory*/
+    EECON1bits.CFGS = 0;  /* Access flash program or data memory*/
+    EECON1bits.WREN = 1;  /* Allow write to the memory*/
+    INTCONbits.GIE = 0;   /* Disable global interrupt*/
+
+    /* Below sequence in EECON2 Register is necessary
+    to write data to EEPROM memory*/
+    EECON2 = 0x55;
+    EECON2 = 0xAA;
+
+    EECON1bits.WR = 1;  /* Start writing data to EEPROM memory*/
+    INTCONbits.GIE = 1; /* Enable interrupt*/
+
+    while (PIR2bits.EEIF == 0)
+        ;              /* Wait for write operation complete */
+    PIR2bits.EEIF = 0; /* Reset EEIF for further write operation */
+}
+
+/*
+ *@desc : read data from eeprom.
+ *@params : address
+ *@return : data
+ *@return_type : char
+ */
+char EEPROM_Read(unsigned char address)
+{
+    /*Read operation*/
+    EEADR = address;      /* Read data at location 0x00*/
+    EECON1bits.WREN = 0;  /* WREN bit is clear for Read operation*/
+    EECON1bits.EEPGD = 0; /* Access data EEPROM memory*/
+    EECON1bits.RD = 1;    /* To Read data of EEPROM memory set RD=1*/
+    return (EEDATA);
+}
+
+/* Default display function definition */
+/*
+ *@desc : display data in edit mode and update mode.
+ *@params : buttonCounter, update.
+ *@return : none
+ */
+void display(unsigned int buttonCounter, unsigned int update)
+{
+    display_function_count = display_function_count + 1; // Increment when this function is called.
+
+    unsigned char hour_first_digit, hour_second_digit, minute_first_digit, minute_second_digit;
+    unsigned int DEL;
+
+    /* read stored hour and minute data from EEPROM */
+    hour_first_digit = EEPROM_Read(0x0A);    // read eeprom data at address location 0x0A
+    hour_second_digit = EEPROM_Read(0x0B);   // read eeprom data at address location 0x0B
+    minute_first_digit = EEPROM_Read(0x0C);  // read eeprom data at address location 0x0C
+    minute_second_digit = EEPROM_Read(0x0D); // read eeprom data at address location 0x0D
+
+    for (DEL = 0; DEL <= 9; DEL++)
+    {
+        /* display stored hour and minute data  */
+        // display 1
+        LATAbits.LATA0 = (buttonCounter == 1) ? 0 : 1; // if button counter is greater than 0, then off this display, this display should be on at certain intervals.
+        PORTB = segment[hour_first_digit];             // Find Code and send it to the PORT
+        __delay_ms(3);                                 // DELAY for turning on the display
+        LATAbits.LATA0 = 0;                            // TURN OFF DISPLAY-1
+
+        // display 2
+        LATAbits.LATA1 = (buttonCounter == 2) ? 0 : 1; // TURN ON DISPLAY-2 depends on button counter variable.
+        PORTB = segment_with_dot[hour_second_digit];   // Find Code and send it to the PORT
+        __delay_ms(3);                                 // DELAY for turning on the display
+        LATAbits.LATA1 = 0;                            // TURN OFF DISPLAY-2
+
+        // MINUTE DISPLAY
+        // display 3
+        LATAbits.LATA2 = (buttonCounter == 3) ? 0 : 1; // TURN ON DISPLAY-3
+        PORTB = segment[minute_first_digit];           // Find Code and send it to the PORT
+        __delay_ms(3);                                 // DELAY for turning on the display
+        LATAbits.LATA2 = 0;                            // TURN OFF DISPLAY-3
+
+        // display 4
+        LATAbits.LATA3 = (buttonCounter == 4) ? 0 : 1; // TURN ON DISPLAY-4
+        PORTB = segment[minute_second_digit];          // Find Code and send it to the PORT
+        __delay_ms(3);                                 // DELAY for turning on the display
+        LATAbits.LATA3 = 0;                            // TURN OFF DISPLAY-4
+
+        LATAbits.LATA7 = 0; // buzzer - off
+
+        if ((display_function_count % 12 == 0) || (display_function_count % 6 == 0)) // once this condition passes, following digit will be visible..
+        {
+            switch (buttonCounter) // button counter
+            {
+            case 1:
+                LATAbits.LATA0 = 1;                // TURN ON DISPLAY-1
+                PORTB = segment[hour_first_digit]; // Find Code and send it to the PORT
+                __delay_ms(3);                     // DELAY for turning on the display
+                LATAbits.LATA0 = 0;                // TURN OFF DISPLAY-1
+                break;
+
+            case 2:
+                LATAbits.LATA1 = 1;                          // TURN ON DISPLAY-2
+                PORTB = segment_with_dot[hour_second_digit]; // Find Code and send it to the PORT
+                __delay_ms(3);                               // DELAY for turning on the display
+                LATAbits.LATA1 = 0;                          // TURN OFF DISPLAY-2
+                break;
+
+            case 3:
+                LATAbits.LATA2 = 1;                  // TURN ON DISPLAY-3
+                PORTB = segment[minute_first_digit]; // Find Code and send it to the PORT
+                __delay_ms(3);                       // DELAY for turning on the display
+                LATAbits.LATA2 = 0;                  // TURN OFF DISPLAY-3
+                break;
+
+            case 4:
+                LATAbits.LATA3 = 1;                   // TURN ON DISPLAY-4
+                PORTB = segment[minute_second_digit]; // Find Code and send it to the PORT
+                __delay_ms(3);                        // DELAY for turning on the display
+                LATAbits.LATA3 = 0;                   // TURN OFF DISPLAY-4
+                break;
+
+            default:
+                break;
+            } // end switch statement.
+        }     // end if statement.
+    }         // end delay loop
+
+    // Update digits.
+    if (update && (display_function_count % 2 == 0))
+    {
+        switch (buttonCounter)
+        {
+        case 1:
+            hour_first_digit = hour_first_digit + 1; // increment the value
+            if (hour_first_digit > 9)
+                hour_first_digit = 0;             // if it exceeds 9, reset it to 0.
+            EEPROM_Write(0x0A, hour_first_digit); // update and store the value in eeprom
+            break;
+        case 2:
+            hour_second_digit = hour_second_digit + 1; // increment the value
+            if (hour_second_digit > 9)
+                hour_second_digit = 0;             // if it exceeds 9, reset it to 0.
+            EEPROM_Write(0x0B, hour_second_digit); // update and store the value in eeprom
+            break;
+        case 3:
+            minute_first_digit = minute_first_digit + 1; // increment the value
+            if (minute_first_digit > 5)
+                minute_first_digit = 0;             // if it exceeds 5, reset it to 0.
+            EEPROM_Write(0x0C, minute_first_digit); // update and store the value in eeprom
+            break;
+        case 4:
+            minute_second_digit = minute_second_digit + 1; // increment the value
+            if (minute_second_digit > 9)
+                minute_second_digit = 0;             // if it exceeds 9, reset it to 0.
+            EEPROM_Write(0x0D, minute_second_digit); // update and store the value in eeprom
+            break;
+        default:
+            break;
+        }
+    }
+
+    // reset display function counter.
+    if (display_function_count > 1000)
+        display_function_count = 0;
+}
+
+/*
+ *@desc : converts type (int to char)
+ */
+unsigned char inttochar(unsigned int digit){
+    /*
+     * ASCII representation of 0 is 48, any digit added to 48 will be char representation of that number.
+     */
+    return digit + '0';
+}
+
+
+/*
+ * @desc : Collective function to display some character on lcd.
+ */
+void lcd_print(unsigned char row, unsigned char col, char Data){
+    /*
+     * 1. Set cursor.
+     * 2. Print
+     */
+    LCD_Set_Cursor(row,col); /* set cursor */
+    LCD_Write_Char(Data); /*write data*/
+}
+
+/*
+ *@desc : main function
+ */
+void main(void)
+{
+    
+    // Configure the oscillator(64MHz using PLL)
+    OSCCON = 0x70;  // 0b01110000
+    OSCTUNE = 0xC0; // 0b11000000
+
+    // Configure the button pins
+    TRISCbits.TRISC0 = 1;
+    TRISCbits.TRISC1 = 1;
+    TRISCbits.TRISC2 = 1;
+
+    // Configure the input pins as digital.
+    ANSELCbits.ANSC2 = 0;
+
+    // Configure the pins for seven segment display
+    /*
+    TRISAbits.TRISA0 = 0;
+    TRISAbits.TRISA1 = 0;
+    TRISAbits.TRISA2 = 0;
+    TRISAbits.TRISA3 = 0;
+     */ 
+
+    // Configure the digital pins (RGB LED))
+    TRISAbits.TRISA4 = 0; // led 1
+    TRISAbits.TRISA5 = 0; // led 2
+    TRISAbits.TRISA6 = 0; // led 3
+
+    TRISAbits.TRISA7 = 0; // buzzer
+    TRISCbits.TRISC3 = 0; // relay
+
+
+    // Configure PORTB as digital
+    //TRISB = 0x00; /*Assigned whole port B as output*/
+
+    /*By default all LEDs should be off*/
+    LATAbits.LATA4 = 1;
+    LATAbits.LATA5 = 1;
+    LATAbits.LATA6 = 1;
+
+    LATCbits.LATC3 = 0; // initially relay should be off.
+
+    /*I2C and LCD Initialisation*/
+    I2C2_Init();
+  
+    LCD_Init((0x38<<1)); // Initialize LCD module with I2C address = 0x38
+    
+    //LCD_Set_Cursor(1, 1);
+    //LCD_Write_String("PIC Based Timer");
+
+    /*Start Initial Counter*/
+    startUpcounter();
+
+    /*EEPROM - LCD Write Read Test*/
+    /*
+     * 1. write some integer in EEPROM
+     * 2. Display it on LCD.
+     */
+    /*
+    EEPROM_Write(0x0F, 1); //write '1' at 0x0F.
+    
+    char test_var = EEPROM_Read(0x0F) + '0';
+    
+    LCD_Set_Cursor(2,8); // row-2, column-1
+    LCD_Write_Char(test_var); //display data at 0x0F.
+    */
+
+    /*EEPROM Memory Check*/
+    unsigned int EEPROM_Mem_check; // variable to check whether device is freshly programmed or not.
+
+    EEPROM_Mem_check = EEPROM_Read(0x01); // read data at location 0x01.
+
+    /*
+     * if value at address is not 0x01, that means device is freshly programmed.
+     */
+    if (EEPROM_Mem_check != 1)
+    {
+        // write 0s when, all four digits are zero, otherwise keep the data as it is, don't overwrite.
+        EEPROM_Write(0x0A, 0); // Writing 0 at address location 0x0A, EEPROM_Write(address, data)
+        EEPROM_Write(0x0B, 0); // Writing 0 at address location 0x0B, EEPROM_Write(address, data)
+        EEPROM_Write(0x0C, 0); // Writing 0 at address location 0x0B, EEPROM_Write(address, data)
+        EEPROM_Write(0x0D, 0); // Writing 0 at address location 0x0B, EEPROM_Write(address, data)
+
+        EEPROM_Write(0x01, 1); // write 1 at address location 0x01.
+    }
+
+    unsigned int isEditMode = 0;
+    unsigned int shiftCounter = 1;
+    unsigned int stop_flag = 0;
+    unsigned int updateFlag = 0;
+    unsigned int transition_start_counter = 0;
+    unsigned int transition_end_counter = 0;
+    unsigned char hour_first_digit, hour_second_digit, minute_first_digit, minute_second_digit;
+
+    while (1)
+    {
+        if (PORTCbits.RC0 == 0) // button 1 clicked
+        {
+            LATAbits.LATA7 = 1; // buzzer - on
+
+            isEditMode ^= 1; // toggle
+            stop_flag = 0;   // reset stop flag.
+
+            LATAbits.LATA7 = 0; // buzzer - off
+        }
+        else if (PORTCbits.RC1 == 0) // button 2 clicked
+        {
+            LATAbits.LATA7 = 1; // buzzer - on
+
+            updateFlag = 0; // clear updateFlag
+            stop_flag = 0;  // clear stop flag.
+
+            if (isEditMode)
+            { // edit mode
+
+                __delay_ms(100); // delay for button press.
+
+                if (shiftCounter < 4) // if button shift is less than 4, increment.
+                    shiftCounter++;
+                else
+                    shiftCounter = 1; // equals to 4 or greater than 4, reset the counter to 1.
+
+                display(shiftCounter, updateFlag); // display stored time, shift displays.
+            }
+            else
+            {
+                //@TODO : We have to add transition mode. (on long press)
+                /*
+                 * logic for long press:
+                 * place a counter, and increment the counter when button is pressed.
+                 * place a check for some value of counter, device should enter transition mode.
+                 */
+
+                shiftCounter = 1; // reset button shift counter.
+
+                //green_led(); // start timer indication
+
+                // normal mode.
+                // 1. relay on
+                // 2. startTimer
+                // 3. relay off
+                // 4. time ends indication.
+
+                startTimer(); // start timer.
+            }
+        }
+        else if (PORTCbits.RC2 == 0) // button 3 clicked
+        {
+            LATAbits.LATA7 = 1;           // buzzer - on
+            transition_start_counter = 0; // reset transition start counter.
+
+            if (isEditMode)
+            {                                      // edit mode
+                updateFlag = 1;                    // set update flag.
+                display(shiftCounter, updateFlag); // increment digits of the respective display.
+            }
+            else
+            {
+                stop_flag = 1;
+
+                // normal mode.
+                if (stop_flag)
+                    stopTimer(); // display 00.00 and restart the timer.
+            }
+        }
+        else
+        {
+            transition_start_counter = 0; // reset transition start counter.
+
+            if (isEditMode == 0) // normal mode
+            {
+                red_led(); // set up bits to turn on red led.
+
+                if (stop_flag)
+                {
+                    stopTimer(); // stop timer
+                }
+                else
+                {
+                    display(0, 0); // display stored time in normal mode.
+                }
+            }
+            else // edit mode
+            {
+                updateFlag = 0;                    // clear updateFlag
+                blue_led();                        // set up bits to turn on blue led.
+                display(shiftCounter, updateFlag); // display stored data in edit mode.
+            }
+
+            LATAbits.LATA7 = 0; // buzzer - off
+        }
+    }
+
     return;
 }
+

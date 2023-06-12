@@ -8,38 +8,37 @@
 #include <math.h>
 #include "i2c.h"
 
-
 #define PORT 1
 
 /*LCD Function Declarations*/
-#define LCD_BACKLIGHT         0x08
-#define LCD_NOBACKLIGHT       0x00
-#define LCD_FIRST_ROW         0x80
-#define LCD_SECOND_ROW        0xC0
-#define LCD_THIRD_ROW         0x94
-#define LCD_FOURTH_ROW        0xD4
-#define LCD_CLEAR             0x01
-#define LCD_RETURN_HOME       0x02
-#define LCD_ENTRY_MODE_SET    0x04
-#define LCD_CURSOR_OFF        0x0C
-#define LCD_UNDERLINE_ON      0x0E
-#define LCD_BLINK_CURSOR_ON   0x0F
-#define LCD_MOVE_CURSOR_LEFT  0x10
+#define LCD_BACKLIGHT 0x08
+#define LCD_NOBACKLIGHT 0x00
+#define LCD_FIRST_ROW 0x80
+#define LCD_SECOND_ROW 0xC0
+#define LCD_THIRD_ROW 0x94
+#define LCD_FOURTH_ROW 0xD4
+#define LCD_CLEAR 0x01
+#define LCD_RETURN_HOME 0x02
+#define LCD_ENTRY_MODE_SET 0x04
+#define LCD_CURSOR_OFF 0x0C
+#define LCD_UNDERLINE_ON 0x0E
+#define LCD_BLINK_CURSOR_ON 0x0F
+#define LCD_MOVE_CURSOR_LEFT 0x10
 #define LCD_MOVE_CURSOR_RIGHT 0x14
-#define LCD_TURN_ON           0x0C
-#define LCD_TURN_OFF          0x08
-#define LCD_SHIFT_LEFT        0x18
-#define LCD_SHIFT_RIGHT       0x1E
-#define LCD_TYPE              2 // 0 -> 5x7 | 1 -> 5x10 | 2 -> 2 lines
+#define LCD_TURN_ON 0x0C
+#define LCD_TURN_OFF 0x08
+#define LCD_SHIFT_LEFT 0x18
+#define LCD_SHIFT_RIGHT 0x1E
+#define LCD_TYPE 2 // 0 -> 5x7 | 1 -> 5x10 | 2 -> 2 lines
 
-/* LCD Function Declaration */ 
+/* LCD Function Declaration */
 void LCD_Init(unsigned char I2C_Add);
 void IO_Expander_Write(unsigned char Data);
 void LCD_Write_4Bit(unsigned char Nibble);
 void LCD_CMD(unsigned char CMD);
 void LCD_Set_Cursor(unsigned char ROW, unsigned char COL);
 void LCD_Write_Char(char);
-void LCD_Write_String(char*);
+void LCD_Write_String(char *);
 void Backlight();
 void noBacklight();
 void LCD_SR();
@@ -67,6 +66,7 @@ void stopMessage(); // display 0VEr on display.
 /*EEPROM Function Declarations*/
 void EEPROM_Write(unsigned char, unsigned char); /* Write byte to EEPROM */
 char EEPROM_Read(unsigned char);                 /* Read byte From EEPROM */
+void EEPROM_Mem_Initialise();
 
 /* Utility Function Declaration */
 unsigned char inttochar(unsigned int digit); /* converts int type to char type */
@@ -82,113 +82,112 @@ static unsigned int display_function_count = 0; // counts the number of times di
 
 void LCD_Init(unsigned char I2C_Add)
 {
-  i2c_add = I2C_Add;
-  IO_Expander_Write(0x00);
-  __delay_ms(30);
-  LCD_CMD(0x03);
-  __delay_ms(5);
-  LCD_CMD(0x03);
-  __delay_ms(5);
-  LCD_CMD(0x03);
-  __delay_ms(5);
-  LCD_CMD(LCD_RETURN_HOME);
-  __delay_ms(5);
-  LCD_CMD(0x20 | (LCD_TYPE << 2));
-  __delay_ms(50);
-  LCD_CMD(LCD_TURN_ON);
-  __delay_ms(50);
-  LCD_CMD(LCD_CLEAR);
-  __delay_ms(50);
-  LCD_CMD(LCD_ENTRY_MODE_SET | LCD_RETURN_HOME);
-  __delay_ms(50);
-}
- 
-void IO_Expander_Write(unsigned char Data)
-{
-  I2C2_Start();
-  I2C2_Send(i2c_add);
-  I2C2_Send(Data | BackLight_State);
-  I2C2_Stop();
-}
- 
-void LCD_Write_4Bit(unsigned char Nibble)
-{
-  // Get The RS Value To LSB OF Data
-  Nibble |= RS;
-  IO_Expander_Write(Nibble | 0x04);
-  IO_Expander_Write(Nibble & 0xFB);
-  __delay_us(50);
-}
- 
-void LCD_CMD(unsigned char CMD)
-{
-  RS = 0; // Command Register Select
-  LCD_Write_4Bit(CMD & 0xF0);
-  LCD_Write_4Bit((CMD << 4) & 0xF0);
-}
- 
-void LCD_Write_Char(char Data)
-{
-  RS = 1; // Data Register Select
-  LCD_Write_4Bit(Data & 0xF0);
-  LCD_Write_4Bit((Data << 4) & 0xF0);
-}
- 
-void LCD_Write_String(char* Str)
-{
-  for(int i=0; Str[i]!='\0'; i++)
-    LCD_Write_Char(Str[i]);
-}
- 
-void LCD_Set_Cursor(unsigned char ROW, unsigned char COL)
-{
-  switch(ROW)
-  {
-    case 2:
-      LCD_CMD(0xC0 + COL-1);
-      break;
-    case 3:
-      LCD_CMD(0x94 + COL-1);
-      break;
-    case 4:
-      LCD_CMD(0xD4 + COL-1);
-      break;
-    // Case 1
-    default:
-      LCD_CMD(0x80 + COL-1);
-  }
-}
- 
-void Backlight()
-{
-  BackLight_State = LCD_BACKLIGHT;
-  IO_Expander_Write(0);
-}
- 
-void noBacklight()
-{
-  BackLight_State = LCD_NOBACKLIGHT;
-  IO_Expander_Write(0);
-}
- 
-void LCD_SL()
-{
-  LCD_CMD(0x18);
-  __delay_us(40);
-}
- 
-void LCD_SR()
-{
-  LCD_CMD(0x1C);
-  __delay_us(40);
-}
- 
-void LCD_CLR()
-{
-  LCD_CMD(0x01);
-  __delay_us(40);
+    i2c_add = I2C_Add;
+    IO_Expander_Write(0x00);
+    __delay_ms(30);
+    LCD_CMD(0x03);
+    __delay_ms(5);
+    LCD_CMD(0x03);
+    __delay_ms(5);
+    LCD_CMD(0x03);
+    __delay_ms(5);
+    LCD_CMD(LCD_RETURN_HOME);
+    __delay_ms(5);
+    LCD_CMD(0x20 | (LCD_TYPE << 2));
+    __delay_ms(50);
+    LCD_CMD(LCD_TURN_ON);
+    __delay_ms(50);
+    LCD_CMD(LCD_CLEAR);
+    __delay_ms(50);
+    LCD_CMD(LCD_ENTRY_MODE_SET | LCD_RETURN_HOME);
+    __delay_ms(50);
 }
 
+void IO_Expander_Write(unsigned char Data)
+{
+    I2C2_Start();
+    I2C2_Send(i2c_add);
+    I2C2_Send(Data | BackLight_State);
+    I2C2_Stop();
+}
+
+void LCD_Write_4Bit(unsigned char Nibble)
+{
+    // Get The RS Value To LSB OF Data
+    Nibble |= RS;
+    IO_Expander_Write(Nibble | 0x04);
+    IO_Expander_Write(Nibble & 0xFB);
+    __delay_us(50);
+}
+
+void LCD_CMD(unsigned char CMD)
+{
+    RS = 0; // Command Register Select
+    LCD_Write_4Bit(CMD & 0xF0);
+    LCD_Write_4Bit((CMD << 4) & 0xF0);
+}
+
+void LCD_Write_Char(char Data)
+{
+    RS = 1; // Data Register Select
+    LCD_Write_4Bit(Data & 0xF0);
+    LCD_Write_4Bit((Data << 4) & 0xF0);
+}
+
+void LCD_Write_String(char *Str)
+{
+    for (int i = 0; Str[i] != '\0'; i++)
+        LCD_Write_Char(Str[i]);
+}
+
+void LCD_Set_Cursor(unsigned char ROW, unsigned char COL)
+{
+    switch (ROW)
+    {
+    case 2:
+        LCD_CMD(0xC0 + COL - 1);
+        break;
+    case 3:
+        LCD_CMD(0x94 + COL - 1);
+        break;
+    case 4:
+        LCD_CMD(0xD4 + COL - 1);
+        break;
+    // Case 1
+    default:
+        LCD_CMD(0x80 + COL - 1);
+    }
+}
+
+void Backlight()
+{
+    BackLight_State = LCD_BACKLIGHT;
+    IO_Expander_Write(0);
+}
+
+void noBacklight()
+{
+    BackLight_State = LCD_NOBACKLIGHT;
+    IO_Expander_Write(0);
+}
+
+void LCD_SL()
+{
+    LCD_CMD(0x18);
+    __delay_us(40);
+}
+
+void LCD_SR()
+{
+    LCD_CMD(0x1C);
+    __delay_us(40);
+}
+
+void LCD_CLR()
+{
+    LCD_CMD(0x01);
+    __delay_us(40);
+}
 
 /*
  * led function definitions
@@ -234,7 +233,7 @@ void seven_segment_config()
     LATAbits.LATA1 = 1;
     LATAbits.LATA2 = 1;
     LATAbits.LATA3 = 1;
-     */ 
+     */
 }
 
 /*
@@ -321,7 +320,7 @@ void startTimer()
                     for (DEL = 4990; DEL > 0; DEL--) // To create approximate 60 second delay, we need to pass 4975, as we are running with 64MHz.
                     {
 
-                        green_led(); // turn green led on
+                        green_led();        // turn green led on
                         LATCbits.LATC3 = 1; // Turn LED panel off (relay off)
 
                         //  DISPLAY-1 :
@@ -428,13 +427,18 @@ void stopMessage()
     unsigned int DEL;
 
     red_led(); // red led to indicate that timer is over.
-    
-    LCD_Init((0x38<<1));
-    
+
+    LCD_Init((0x38 << 1));
+
     LCD_Set_Cursor(1, 7);
     LCD_Write_String("OVER");
     
+    __delay_ms(500);
+
+    LCD_CLR();
     LATAbits.LATA7 = 0;
+    
+    __delay_ms(50);
 }
 
 /*
@@ -447,22 +451,21 @@ void startUpcounter()
     seven_segment_config();
     unsigned int displaypos, actualpos;
 
-
-
     for (segmentCounter = 0; segmentCounter < 10; segmentCounter++)
     {
         LATAbits.LATA7 = 1; // buzzer - on
 
-        for(displaypos = 3; displaypos < 7; displaypos++){
-             actualpos = displaypos * 2;
-                        
-            lcd_print(1, actualpos, inttochar(segmentCounter)); /* print digits */
-            lcd_print(1, actualpos+1, '.'); /*prints dot after a number*/
+        for (displaypos = 3; displaypos < 7; displaypos++)
+        {
+            actualpos = displaypos * 2;
+
+            lcd_print(1, actualpos, inttochar(segmentCounter)); /* print digit */
+            lcd_print(1, actualpos + 1, '.');                   /*print dot after a number*/
         }
-        __delay_ms(500);    /*500 sec delay*/
+        __delay_ms(500); /*500 milli-sec delay*/
 
         LATAbits.LATA7 = 0; // buzzer - off
-        __delay_ms(500);    /*500 sec delay*/
+        __delay_ms(500);    /*500 milli-sec delay*/
     }
 
     LCD_CLR();
@@ -507,6 +510,7 @@ void EEPROM_Write(unsigned char address, unsigned char data)
  *@return : data
  *@return_type : char
  */
+
 char EEPROM_Read(unsigned char address)
 {
     /*Read operation*/
@@ -525,84 +529,134 @@ char EEPROM_Read(unsigned char address)
  */
 void display(unsigned int buttonCounter, unsigned int update)
 {
+    __delay_ms(50);   
+ 
     display_function_count = display_function_count + 1; // Increment when this function is called.
 
     unsigned char hour_first_digit, hour_second_digit, minute_first_digit, minute_second_digit;
-    unsigned int DEL;
-
+    unsigned int hour_f_digit, hour_s_digit, minute_f_digit, minute_s_digit;
+    
     /* read stored hour and minute data from EEPROM */
-    hour_first_digit = EEPROM_Read(0x0A);    // read eeprom data at address location 0x0A
-    hour_second_digit = EEPROM_Read(0x0B);   // read eeprom data at address location 0x0B
-    minute_first_digit = EEPROM_Read(0x0C);  // read eeprom data at address location 0x0C
-    minute_second_digit = EEPROM_Read(0x0D); // read eeprom data at address location 0x0D
+    /*
+    hour_first_digit = inttochar(EEPROM_Read(0x0A));    // read eeprom data at address location 0x0A
+    hour_second_digit = inttochar(EEPROM_Read(0x0B));   // read eeprom data at address location 0x0B
+    minute_first_digit = inttochar(EEPROM_Read(0x0C));  // read eeprom data at address location 0x0C
+    minute_second_digit = inttochar(EEPROM_Read(0x0D)); // read eeprom data at address location 0x0D
+    */
 
-    for (DEL = 0; DEL <= 9; DEL++)
-    {
         /* display stored hour and minute data  */
-        // display 1
+        // digit 1
+        /*
         LATAbits.LATA0 = (buttonCounter == 1) ? 0 : 1; // if button counter is greater than 0, then off this display, this display should be on at certain intervals.
         PORTB = segment[hour_first_digit];             // Find Code and send it to the PORT
         __delay_ms(3);                                 // DELAY for turning on the display
         LATAbits.LATA0 = 0;                            // TURN OFF DISPLAY-1
+        */
+        if (buttonCounter == 1)
+        {
+            LCD_Set_Cursor(1, 6);
+            LCD_Write_Char(' ');
+            
+             __delay_ms(200);
+        }else{
+            LCD_Set_Cursor(1, 6);
+            LCD_Write_Char(inttochar(EEPROM_Read(0x0A)));       
+        }
 
-        // display 2
+        // digit 2
+        /*
         LATAbits.LATA1 = (buttonCounter == 2) ? 0 : 1; // TURN ON DISPLAY-2 depends on button counter variable.
         PORTB = segment_with_dot[hour_second_digit];   // Find Code and send it to the PORT
         __delay_ms(3);                                 // DELAY for turning on the display
         LATAbits.LATA1 = 0;                            // TURN OFF DISPLAY-2
+        */
+        if (buttonCounter == 2)
+        {
+            LCD_Set_Cursor(1, 8);
+            LCD_Write_Char(' ');
+
+            __delay_ms(200);
+        }else{
+            LCD_Set_Cursor(1, 8);
+            LCD_Write_Char(inttochar(EEPROM_Read(0x0B)));
+        }
 
         // MINUTE DISPLAY
-        // display 3
+        // digit 3
+        /*
         LATAbits.LATA2 = (buttonCounter == 3) ? 0 : 1; // TURN ON DISPLAY-3
         PORTB = segment[minute_first_digit];           // Find Code and send it to the PORT
         __delay_ms(3);                                 // DELAY for turning on the display
         LATAbits.LATA2 = 0;                            // TURN OFF DISPLAY-3
+        */
+        if (buttonCounter == 3)
+        {
+            LCD_Set_Cursor(1, 10);
+            LCD_Write_Char(' ');
 
-        // display 4
+            __delay_ms(200);
+        }else{
+            LCD_Set_Cursor(1, 10);
+            LCD_Write_Char(inttochar(EEPROM_Read(0x0C)));
+        }
+
+        // digit 4
+        /*
         LATAbits.LATA3 = (buttonCounter == 4) ? 0 : 1; // TURN ON DISPLAY-4
         PORTB = segment[minute_second_digit];          // Find Code and send it to the PORT
         __delay_ms(3);                                 // DELAY for turning on the display
         LATAbits.LATA3 = 0;                            // TURN OFF DISPLAY-4
+        */
+        if (buttonCounter == 4)
+        {
+            LCD_Set_Cursor(1, 12);
+            LCD_Write_Char(' ');
+
+            __delay_ms(200);
+        }else{
+            LCD_Set_Cursor(1, 12);
+            LCD_Write_Char(inttochar(EEPROM_Read(0x0D)));
+        }
 
         LATAbits.LATA7 = 0; // buzzer - off
 
+        
         if ((display_function_count % 12 == 0) || (display_function_count % 6 == 0)) // once this condition passes, following digit will be visible..
         {
             switch (buttonCounter) // button counter
             {
             case 1:
-                LATAbits.LATA0 = 1;                // TURN ON DISPLAY-1
-                PORTB = segment[hour_first_digit]; // Find Code and send it to the PORT
-                __delay_ms(3);                     // DELAY for turning on the display
-                LATAbits.LATA0 = 0;                // TURN OFF DISPLAY-1
+                LCD_Set_Cursor(1, 6);
+                LCD_Write_Char(inttochar(EEPROM_Read(0x0A)));
+                
+                __delay_ms(200);
                 break;
 
             case 2:
-                LATAbits.LATA1 = 1;                          // TURN ON DISPLAY-2
-                PORTB = segment_with_dot[hour_second_digit]; // Find Code and send it to the PORT
-                __delay_ms(3);                               // DELAY for turning on the display
-                LATAbits.LATA1 = 0;                          // TURN OFF DISPLAY-2
+                LCD_Set_Cursor(1, 8);
+                LCD_Write_Char(inttochar(EEPROM_Read(0x0B)));
+
+                __delay_ms(200);
                 break;
 
             case 3:
-                LATAbits.LATA2 = 1;                  // TURN ON DISPLAY-3
-                PORTB = segment[minute_first_digit]; // Find Code and send it to the PORT
-                __delay_ms(3);                       // DELAY for turning on the display
-                LATAbits.LATA2 = 0;                  // TURN OFF DISPLAY-3
+                LCD_Set_Cursor(1, 10);
+                LCD_Write_Char(inttochar(EEPROM_Read(0x0C)));
+
+                __delay_ms(200);
                 break;
 
             case 4:
-                LATAbits.LATA3 = 1;                   // TURN ON DISPLAY-4
-                PORTB = segment[minute_second_digit]; // Find Code and send it to the PORT
-                __delay_ms(3);                        // DELAY for turning on the display
-                LATAbits.LATA3 = 0;                   // TURN OFF DISPLAY-4
+                LCD_Set_Cursor(1, 12);
+                LCD_Write_Char(inttochar(EEPROM_Read(0x0D)));
+
+                __delay_ms(200);
                 break;
 
             default:
                 break;
             } // end switch statement.
         }     // end if statement.
-    }         // end delay loop
 
     // Update digits.
     if (update && (display_function_count % 2 == 0))
@@ -610,34 +664,39 @@ void display(unsigned int buttonCounter, unsigned int update)
         switch (buttonCounter)
         {
         case 1:
-            hour_first_digit = hour_first_digit + 1; // increment the value
-            if (hour_first_digit > 9)
-                hour_first_digit = 0;             // if it exceeds 9, reset it to 0.
-            EEPROM_Write(0x0A, hour_first_digit); // update and store the value in eeprom
+            hour_f_digit = EEPROM_Read(0x0A) + 1; // increment the value
+            
+            if (hour_f_digit > 9)
+                hour_f_digit = 0;             // if it exceeds 9, reset it to 0.
+            EEPROM_Write(0x0A, hour_f_digit); // update and store the value in eeprom
             break;
         case 2:
-            hour_second_digit = hour_second_digit + 1; // increment the value
-            if (hour_second_digit > 9)
-                hour_second_digit = 0;             // if it exceeds 9, reset it to 0.
-            EEPROM_Write(0x0B, hour_second_digit); // update and store the value in eeprom
+            hour_s_digit = EEPROM_Read(0x0B) + 1; // increment the value
+            
+            if (hour_s_digit > 9)
+                hour_s_digit = 0;             // if it exceeds 9, reset it to 0.
+            EEPROM_Write(0x0B, hour_s_digit); // update and store the value in eeprom
             break;
         case 3:
-            minute_first_digit = minute_first_digit + 1; // increment the value
-            if (minute_first_digit > 5)
-                minute_first_digit = 0;             // if it exceeds 5, reset it to 0.
-            EEPROM_Write(0x0C, minute_first_digit); // update and store the value in eeprom
+            minute_f_digit = EEPROM_Read(0x0C) + 1; // increment the value
+            
+            if (minute_f_digit > 5)
+                minute_f_digit = 0;             // if it exceeds 5, reset it to 0.
+            EEPROM_Write(0x0C, minute_f_digit); // update and store the value in eeprom
             break;
         case 4:
-            minute_second_digit = minute_second_digit + 1; // increment the value
-            if (minute_second_digit > 9)
-                minute_second_digit = 0;             // if it exceeds 9, reset it to 0.
-            EEPROM_Write(0x0D, minute_second_digit); // update and store the value in eeprom
+            minute_s_digit = EEPROM_Read(0x0D) + 1; // increment the value
+            
+            if (minute_s_digit > 9)
+                minute_s_digit = 0;             // if it exceeds 9, reset it to 0.
+            EEPROM_Write(0x0D, minute_s_digit); // update and store the value in eeprom
             break;
         default:
             break;
         }
     }
-
+        
+       
     // reset display function counter.
     if (display_function_count > 1000)
         display_function_count = 0;
@@ -646,24 +705,49 @@ void display(unsigned int buttonCounter, unsigned int update)
 /*
  *@desc : converts type (int to char)
  */
-unsigned char inttochar(unsigned int digit){
+unsigned char inttochar(unsigned int digit)
+{
     /*
      * ASCII representation of 0 is 48, any digit added to 48 will be char representation of that number.
      */
     return digit + '0';
 }
 
-
 /*
  * @desc : Collective function to display some character on lcd.
  */
-void lcd_print(unsigned char row, unsigned char col, char Data){
+void lcd_print(unsigned char row, unsigned char col, char Data)
+{
     /*
      * 1. Set cursor.
      * 2. Print
      */
-    LCD_Set_Cursor(row,col); /* set cursor */
-    LCD_Write_Char(Data); /*write data*/
+    LCD_Set_Cursor(row, col); /* set cursor */
+    LCD_Write_Char(Data);     /*write data*/
+}
+
+
+void EEPROM_Mem_Initialise(){
+    unsigned char eeprom_addr;
+    unsigned int EEPROM_Mem_check;
+    
+    
+   __delay_ms(1500); // big delay for stable read and write operations.
+    
+    EEPROM_Mem_check = EEPROM_Read(0x01);
+    
+    if(EEPROM_Mem_check  != 1){
+        
+        for(eeprom_addr = 0x0A; eeprom_addr < 0x0E; eeprom_addr++){
+            EEPROM_Write(eeprom_addr, 1);
+            __delay_ms(20); //delay of 20ms.
+        }
+        
+        EEPROM_Write(0x01, 1);
+        
+        __delay_ms(1500);// big delay for stable read and write operations.
+    }
+    
 }
 
 /*
@@ -671,7 +755,7 @@ void lcd_print(unsigned char row, unsigned char col, char Data){
  */
 void main(void)
 {
-    
+
     // Configure the oscillator(64MHz using PLL)
     OSCCON = 0x70;  // 0b01110000
     OSCTUNE = 0xC0; // 0b11000000
@@ -684,14 +768,6 @@ void main(void)
     // Configure the input pins as digital.
     ANSELCbits.ANSC2 = 0;
 
-    // Configure the pins for seven segment display
-    /*
-    TRISAbits.TRISA0 = 0;
-    TRISAbits.TRISA1 = 0;
-    TRISAbits.TRISA2 = 0;
-    TRISAbits.TRISA3 = 0;
-     */ 
-
     // Configure the digital pins (RGB LED))
     TRISAbits.TRISA4 = 0; // led 1
     TRISAbits.TRISA5 = 0; // led 2
@@ -699,10 +775,6 @@ void main(void)
 
     TRISAbits.TRISA7 = 0; // buzzer
     TRISCbits.TRISC3 = 0; // relay
-
-
-    // Configure PORTB as digital
-    //TRISB = 0x00; /*Assigned whole port B as output*/
 
     /*By default all LEDs should be off*/
     LATAbits.LATA4 = 1;
@@ -713,15 +785,17 @@ void main(void)
 
     /*I2C and LCD Initialisation*/
     I2C2_Init();
-  
-    LCD_Init((0x38<<1)); // Initialize LCD module with I2C address = 0x38
-    
-    //LCD_Set_Cursor(1, 1);
-    //LCD_Write_String("PIC Based Timer");
+
+    LCD_Init((0x38 << 1)); // Initialize LCD module with I2C address = 0x38
 
     /*Start Initial Counter*/
     startUpcounter();
 
+    
+    /* EEPROM Memory Initialisation */
+    EEPROM_Mem_Initialise();
+    
+    
     /*EEPROM - LCD Write Read Test*/
     /*
      * 1. write some integer in EEPROM
@@ -729,32 +803,13 @@ void main(void)
      */
     /*
     EEPROM_Write(0x0F, 1); //write '1' at 0x0F.
-    
+
     char test_var = EEPROM_Read(0x0F) + '0';
-    
+
     LCD_Set_Cursor(2,8); // row-2, column-1
     LCD_Write_Char(test_var); //display data at 0x0F.
     */
-
-    /*EEPROM Memory Check*/
-    unsigned int EEPROM_Mem_check; // variable to check whether device is freshly programmed or not.
-
-    EEPROM_Mem_check = EEPROM_Read(0x01); // read data at location 0x01.
-
-    /*
-     * if value at address is not 0x01, that means device is freshly programmed.
-     */
-    if (EEPROM_Mem_check != 1)
-    {
-        // write 0s when, all four digits are zero, otherwise keep the data as it is, don't overwrite.
-        EEPROM_Write(0x0A, 0); // Writing 0 at address location 0x0A, EEPROM_Write(address, data)
-        EEPROM_Write(0x0B, 0); // Writing 0 at address location 0x0B, EEPROM_Write(address, data)
-        EEPROM_Write(0x0C, 0); // Writing 0 at address location 0x0B, EEPROM_Write(address, data)
-        EEPROM_Write(0x0D, 0); // Writing 0 at address location 0x0B, EEPROM_Write(address, data)
-
-        EEPROM_Write(0x01, 1); // write 1 at address location 0x01.
-    }
-
+  
     unsigned int isEditMode = 0;
     unsigned int shiftCounter = 1;
     unsigned int stop_flag = 0;
@@ -804,7 +859,7 @@ void main(void)
 
                 shiftCounter = 1; // reset button shift counter.
 
-                //green_led(); // start timer indication
+                // green_led(); // start timer indication
 
                 // normal mode.
                 // 1. relay on
@@ -864,4 +919,3 @@ void main(void)
 
     return;
 }
-

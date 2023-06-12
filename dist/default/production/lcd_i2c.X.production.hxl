@@ -1,7 +1,7 @@
 ### HEXMate logfile and output summary ###
 
 ### Command-line arguments ###
- C:\Users\sudar\AppData\Local\Temp\xcAskdg.\driver_tmp_3.o
+ C:\Users\sudar\AppData\Local\Temp\xcAs270.\driver_tmp_3.o
  -Odist/default/production\lcd_i2c.X.production.hex
  -logfile=dist/default/production\lcd_i2c.X.production.hxl
  -addressing=1
@@ -9,23 +9,23 @@
 
 ### Memory Usage ###
  Input file ranges:
-  0h - 3h		(C:\Users\sudar\AppData\Local\Temp\xcAskdg.\driver_tmp_3.o)
-  600h - 606h		(C:\Users\sudar\AppData\Local\Temp\xcAskdg.\driver_tmp_3.o)
-  608h - 1544h		(C:\Users\sudar\AppData\Local\Temp\xcAskdg.\driver_tmp_3.o)
-  1546h - 15C1h		(C:\Users\sudar\AppData\Local\Temp\xcAskdg.\driver_tmp_3.o)
-  200000h - 200007h		(C:\Users\sudar\AppData\Local\Temp\xcAskdg.\driver_tmp_3.o)
-  300000h - 30000Dh		(C:\Users\sudar\AppData\Local\Temp\xcAskdg.\driver_tmp_3.o)
+  0h - 3h		(C:\Users\sudar\AppData\Local\Temp\xcAs270.\driver_tmp_3.o)
+  600h - 606h		(C:\Users\sudar\AppData\Local\Temp\xcAs270.\driver_tmp_3.o)
+  608h - 15EEh		(C:\Users\sudar\AppData\Local\Temp\xcAs270.\driver_tmp_3.o)
+  15F0h - 166Bh		(C:\Users\sudar\AppData\Local\Temp\xcAs270.\driver_tmp_3.o)
+  200000h - 200007h		(C:\Users\sudar\AppData\Local\Temp\xcAs270.\driver_tmp_3.o)
+  300000h - 30000Dh		(C:\Users\sudar\AppData\Local\Temp\xcAs270.\driver_tmp_3.o)
  Unused ranges:
   4h - 5FFh
   607h - 607h
-  1545h - 1545h
-  15C2h - 1FFFFFh
+  15EFh - 15EFh
+  166Ch - 1FFFFFh
   200008h - 2FFFFFh
 
 ### Hex Memory Map ###
  Legend:
   -- = Unused memory
-  H1 = Input file             (C:\Users\sudar\AppData\Local\Temp\xcAskdg.\driver_tmp_3.o)
+  H1 = Input file             (C:\Users\sudar\AppData\Local\Temp\xcAs270.\driver_tmp_3.o)
 ----------------------------------------------------------
          | 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
 ----------------------------------------------------------
@@ -275,7 +275,7 @@
 00001510 | H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1
 00001520 | H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1
 00001530 | H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1
-00001540 | H1 H1 H1 H1 H1 -- H1 H1 H1 H1 H1 H1 H1 H1 H1 H1
+00001540 | H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1
 00001550 | H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1
 00001560 | H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1
 00001570 | H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1
@@ -283,7 +283,17 @@
 00001590 | H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1
 000015A0 | H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1
 000015B0 | H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1
-000015C0 | H1 H1 -- -- -- -- -- -- -- -- -- -- -- -- -- --
+000015C0 | H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1
+000015D0 | H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1
+000015E0 | H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 --
+000015F0 | H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1
+00001600 | H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1
+00001610 | H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1
+00001620 | H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1
+00001630 | H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1
+00001640 | H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1
+00001650 | H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1
+00001660 | H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 -- -- -- --
 ----------------------------------------------------------
 00200000 | H1 H1 H1 H1 H1 H1 H1 H1 -- -- -- -- -- -- -- --
 ----------------------------------------------------------

@@ -23,9 +23,9 @@
 #pragma config IESO = OFF
 
 
-#pragma config PWRTEN = OFF
-#pragma config BOREN = SBORDIS
-#pragma config BORV = 250
+#pragma config PWRTEN = ON
+#pragma config BOREN = ON
+#pragma config BORV = 190
 
 
 #pragma config WDTEN = OFF
@@ -10254,7 +10254,6 @@ void stopMessage()
     LCD_CLR();
     LATAbits.LATA7 = 0;
 
-    _delay((unsigned long)((50)*(64000000/4000.0)));
 }
 
 
@@ -10267,7 +10266,7 @@ void startUpcounter()
     seven_segment_config();
     unsigned int displaypos, actualpos;
 
-    for (segmentCounter = 0; segmentCounter < 10; segmentCounter++)
+    for (segmentCounter = 0; segmentCounter < 2; segmentCounter++)
     {
         LATAbits.LATA7 = 1;
 
@@ -10287,6 +10286,7 @@ void startUpcounter()
     LCD_CLR();
 
     stopMessage();
+
 }
 # 484 "main.c"
 void EEPROM_Write(unsigned char address, unsigned char data)
@@ -10330,54 +10330,57 @@ char EEPROM_Read(unsigned char address)
 
 void display(unsigned int buttonCounter, unsigned int update)
 {
-    _delay((unsigned long)((50)*(64000000/4000.0)));
 
     display_function_count = display_function_count + 1;
 
     unsigned char hour_first_digit, hour_second_digit, minute_first_digit, minute_second_digit;
     unsigned int hour_f_digit, hour_s_digit, minute_f_digit, minute_s_digit;
-# 555 "main.c"
+# 547 "main.c"
+       LCD_Set_Cursor(1, 6);
+
         if (buttonCounter == 1)
         {
-            LCD_Set_Cursor(1, 6);
             LCD_Write_Char(' ');
-
              _delay((unsigned long)((200)*(64000000/4000.0)));
         }else{
-            LCD_Set_Cursor(1, 6);
             LCD_Write_Char(inttochar(EEPROM_Read(0x0A)));
         }
-# 573 "main.c"
+
+
+        LCD_Set_Cursor(1, 8);
+
         if (buttonCounter == 2)
         {
-            LCD_Set_Cursor(1, 8);
             LCD_Write_Char(' ');
-
             _delay((unsigned long)((200)*(64000000/4000.0)));
         }else{
-            LCD_Set_Cursor(1, 8);
             LCD_Write_Char(inttochar(EEPROM_Read(0x0B)));
+
+
+            LCD_Set_Cursor(1,9);
+            LCD_Write_Char(':');
         }
-# 592 "main.c"
+
+
+
+         LCD_Set_Cursor(1, 10);
+
         if (buttonCounter == 3)
         {
-            LCD_Set_Cursor(1, 10);
             LCD_Write_Char(' ');
-
             _delay((unsigned long)((200)*(64000000/4000.0)));
         }else{
-            LCD_Set_Cursor(1, 10);
             LCD_Write_Char(inttochar(EEPROM_Read(0x0C)));
         }
-# 610 "main.c"
+
+
+        LCD_Set_Cursor(1, 12);
+
         if (buttonCounter == 4)
         {
-            LCD_Set_Cursor(1, 12);
             LCD_Write_Char(' ');
-
             _delay((unsigned long)((200)*(64000000/4000.0)));
         }else{
-            LCD_Set_Cursor(1, 12);
             LCD_Write_Char(inttochar(EEPROM_Read(0x0D)));
         }
 
@@ -10432,6 +10435,7 @@ void display(unsigned int buttonCounter, unsigned int update)
             if (hour_f_digit > 9)
                 hour_f_digit = 0;
             EEPROM_Write(0x0A, hour_f_digit);
+            _delay((unsigned long)((50)*(64000000/4000.0)));
             break;
         case 2:
             hour_s_digit = EEPROM_Read(0x0B) + 1;
@@ -10439,6 +10443,7 @@ void display(unsigned int buttonCounter, unsigned int update)
             if (hour_s_digit > 9)
                 hour_s_digit = 0;
             EEPROM_Write(0x0B, hour_s_digit);
+            _delay((unsigned long)((50)*(64000000/4000.0)));
             break;
         case 3:
             minute_f_digit = EEPROM_Read(0x0C) + 1;
@@ -10446,6 +10451,7 @@ void display(unsigned int buttonCounter, unsigned int update)
             if (minute_f_digit > 5)
                 minute_f_digit = 0;
             EEPROM_Write(0x0C, minute_f_digit);
+            _delay((unsigned long)((50)*(64000000/4000.0)));
             break;
         case 4:
             minute_s_digit = EEPROM_Read(0x0D) + 1;
@@ -10453,6 +10459,7 @@ void display(unsigned int buttonCounter, unsigned int update)
             if (minute_s_digit > 9)
                 minute_s_digit = 0;
             EEPROM_Write(0x0D, minute_s_digit);
+            _delay((unsigned long)((50)*(64000000/4000.0)));
             break;
         default:
             break;
@@ -10491,26 +10498,31 @@ void lcd_print(unsigned char row, unsigned char col, char Data)
 
 
 void EEPROM_Mem_Initialise(){
-    unsigned char eeprom_addr;
-    unsigned int EEPROM_Mem_check;
+    unsigned char eeprom_addr, flag_addr = 0x0F;
+    unsigned int mem_check = 0, i = 1;
+
+    _delay((unsigned long)((1000)*(64000000/4000.0)));
 
 
-   _delay((unsigned long)((1500)*(64000000/4000.0)));
+    while((EEPROM_Read(0x0A) == 0) && (EEPROM_Read(0x0B) == 0) && (EEPROM_Read(0x0C) == 0) && (EEPROM_Read(0x0D) == 0) && (EEPROM_Read(0x0F) == 0)){
+            _delay((unsigned long)((500)*(64000000/4000.0)));
+    }
 
-    EEPROM_Mem_check = EEPROM_Read(0x01);
+    if(EEPROM_Read(0x0F) == 1)
+            mem_check = 1;
 
-    if(EEPROM_Mem_check != 1){
+    if(mem_check != 1){
 
         for(eeprom_addr = 0x0A; eeprom_addr < 0x0E; eeprom_addr++){
-            EEPROM_Write(eeprom_addr, 1);
+            EEPROM_Write(eeprom_addr, 0);
             _delay((unsigned long)((20)*(64000000/4000.0)));
         }
 
-        EEPROM_Write(0x01, 1);
-
-        _delay((unsigned long)((1500)*(64000000/4000.0)));
+        EEPROM_Write(flag_addr, 1);
+         _delay((unsigned long)((20)*(64000000/4000.0)));
     }
 
+     _delay((unsigned long)((1000)*(64000000/4000.0)));
 }
 
 
@@ -10554,10 +10566,9 @@ void main(void)
 
     startUpcounter();
 
-
-
+    _delay((unsigned long)((1000)*(64000000/4000.0)));
     EEPROM_Mem_Initialise();
-# 813 "main.c"
+# 794 "main.c"
     unsigned int isEditMode = 0;
     unsigned int shiftCounter = 1;
     unsigned int stop_flag = 0;
@@ -10606,7 +10617,7 @@ void main(void)
 
 
                 shiftCounter = 1;
-# 870 "main.c"
+# 851 "main.c"
                 startTimer();
             }
         }

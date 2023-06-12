@@ -69,7 +69,7 @@
 [v _stopTimer stopTimer `(v  1 e 1 0 ]
 "425
 [v _stopMessage stopMessage `(v  1 e 1 0 ]
-"448
+"447
 [v _startUpcounter startUpcounter `(v  1 e 1 0 ]
 "484
 [v _EEPROM_Write EEPROM_Write `(v  1 e 1 0 ]
@@ -77,15 +77,15 @@
 [v _EEPROM_Read EEPROM_Read `(uc  1 e 1 0 ]
 "530
 [v _display display `(v  1 e 1 0 ]
-"708
+"686
 [v _inttochar inttochar `(uc  1 e 1 0 ]
-"719
+"697
 [v _lcd_print lcd_print `(v  1 e 1 0 ]
-"730
+"708
 [v _EEPROM_Mem_Initialise EEPROM_Mem_Initialise `(v  1 e 1 0 ]
-"756
+"739
 [v _main main `(v  1 e 1 0 ]
-[s S739 . 1 `uc 1 ANSB0 1 0 :1:0 
+[s S741 . 1 `uc 1 ANSB0 1 0 :1:0 
 `uc 1 ANSB1 1 0 :1:1 
 `uc 1 ANSB2 1 0 :1:2 
 `uc 1 ANSB3 1 0 :1:3 
@@ -93,8 +93,8 @@
 `uc 1 ANSB5 1 0 :1:5 
 ]
 "112 C:/Program Files/Microchip/MPLABX/v6.05/packs/Microchip/PIC18F-K_DFP/1.7.134/xc8\pic\include\proc\pic18f25k22.h
-[u S746 . 1 `S739 1 . 1 0 ]
-[v _ANSELBbits ANSELBbits `VES746  1 e 1 @3897 ]
+[u S748 . 1 `S741 1 . 1 0 ]
+[v _ANSELBbits ANSELBbits `VES748  1 e 1 @3897 ]
 [s S459 . 1 `uc 1 . 1 0 :2:0 
 `uc 1 ANSC2 1 0 :1:2 
 `uc 1 ANSC3 1 0 :1:3 
@@ -106,7 +106,7 @@
 "163
 [u S467 . 1 `S459 1 . 1 0 ]
 [v _ANSELCbits ANSELCbits `VES467  1 e 1 @3898 ]
-[s S759 . 1 `uc 1 SEN 1 0 :1:0 
+[s S761 . 1 `uc 1 SEN 1 0 :1:0 
 `uc 1 RSEN 1 0 :1:1 
 `uc 1 PEN 1 0 :1:2 
 `uc 1 RCEN 1 0 :1:3 
@@ -116,7 +116,7 @@
 `uc 1 GCEN 1 0 :1:7 
 ]
 "3462
-[s S768 . 1 `uc 1 SEN2 1 0 :1:0 
+[s S770 . 1 `uc 1 SEN2 1 0 :1:0 
 `uc 1 ADMSK12 1 0 :1:1 
 `uc 1 ADMSK22 1 0 :1:2 
 `uc 1 ADMSK32 1 0 :1:3 
@@ -125,15 +125,15 @@
 `uc 1 ACKSTAT2 1 0 :1:6 
 `uc 1 GCEN2 1 0 :1:7 
 ]
-[s S777 . 1 `uc 1 . 1 0 :1:0 
+[s S779 . 1 `uc 1 . 1 0 :1:0 
 `uc 1 RSEN2 1 0 :1:1 
 `uc 1 PEN2 1 0 :1:2 
 `uc 1 RCEN2 1 0 :1:3 
 `uc 1 ADMSK42 1 0 :1:4 
 `uc 1 ADMSK52 1 0 :1:5 
 ]
-[u S784 . 1 `S759 1 . 1 0 `S768 1 . 1 0 `S777 1 . 1 0 ]
-[v _SSP2CON2bits SSP2CON2bits `VES784  1 e 1 @3947 ]
+[u S786 . 1 `S761 1 . 1 0 `S770 1 . 1 0 `S779 1 . 1 0 ]
+[v _SSP2CON2bits SSP2CON2bits `VES786  1 e 1 @3947 ]
 "3572
 [v _SSP2CON1 SSP2CON1 `VEuc  1 e 1 @3948 ]
 "3692
@@ -275,7 +275,7 @@
 ]
 [u S496 . 1 `S478 1 . 1 0 `S487 1 . 1 0 ]
 [v _TRISAbits TRISAbits `VES496  1 e 1 @3986 ]
-[s S699 . 1 `uc 1 TRISB0 1 0 :1:0 
+[s S701 . 1 `uc 1 TRISB0 1 0 :1:0 
 `uc 1 TRISB1 1 0 :1:1 
 `uc 1 TRISB2 1 0 :1:2 
 `uc 1 TRISB3 1 0 :1:3 
@@ -285,7 +285,7 @@
 `uc 1 TRISB7 1 0 :1:7 
 ]
 "7834
-[s S708 . 1 `uc 1 RB0 1 0 :1:0 
+[s S710 . 1 `uc 1 RB0 1 0 :1:0 
 `uc 1 RB1 1 0 :1:1 
 `uc 1 RB2 1 0 :1:2 
 `uc 1 RB3 1 0 :1:3 
@@ -294,8 +294,8 @@
 `uc 1 RB6 1 0 :1:6 
 `uc 1 RB7 1 0 :1:7 
 ]
-[u S717 . 1 `S699 1 . 1 0 `S708 1 . 1 0 ]
-[v _TRISBbits TRISBbits `VES717  1 e 1 @3987 ]
+[u S719 . 1 `S701 1 . 1 0 `S710 1 . 1 0 ]
+[v _TRISBbits TRISBbits `VES719  1 e 1 @3987 ]
 [s S419 . 1 `uc 1 TRISC0 1 0 :1:0 
 `uc 1 TRISC1 1 0 :1:1 
 `uc 1 TRISC2 1 0 :1:2 
@@ -329,7 +329,7 @@
 ]
 [u S396 . 1 `S380 1 . 1 0 `S389 1 . 1 0 `S393 1 . 1 0 ]
 [v _PIR2bits PIR2bits `VES396  1 e 1 @4001 ]
-[s S814 . 1 `uc 1 TMR1GIF 1 0 :1:0 
+[s S816 . 1 `uc 1 TMR1GIF 1 0 :1:0 
 `uc 1 TMR3GIF 1 0 :1:1 
 `uc 1 TMR5GIF 1 0 :1:2 
 `uc 1 CTMUIF 1 0 :1:3 
@@ -339,13 +339,13 @@
 `uc 1 SSP2IF 1 0 :1:7 
 ]
 "9239
-[s S823 . 1 `uc 1 . 1 0 :1:0 
+[s S825 . 1 `uc 1 . 1 0 :1:0 
 `uc 1 RXBNIF 1 0 :1:1 
 `uc 1 . 1 0 :2:2 
 `uc 1 TXBNIF 1 0 :1:4 
 ]
-[u S828 . 1 `S814 1 . 1 0 `S823 1 . 1 0 ]
-[v _PIR3bits PIR3bits `VES828  1 e 1 @4004 ]
+[u S830 . 1 `S816 1 . 1 0 `S825 1 . 1 0 ]
+[v _PIR3bits PIR3bits `VES830  1 e 1 @4004 ]
 [s S302 . 1 `uc 1 RD 1 0 :1:0 
 `uc 1 WR 1 0 :1:1 
 `uc 1 WREN 1 0 :1:2 
@@ -409,35 +409,35 @@
 [v _DEL DEL `i  1 e 2 0 ]
 "79
 [v _display_function_count display_function_count `ui  1 s 2 display_function_count ]
-"756
+"739
 [v _main main `(v  1 e 1 0 ]
 {
-"814
+"795
 [v main@shiftCounter shiftCounter `ui  1 a 2 29 ]
-"813
+"794
 [v main@isEditMode isEditMode `ui  1 a 2 27 ]
-"815
+"796
 [v main@stop_flag stop_flag `ui  1 a 2 25 ]
-"921
+"902
 } 0
-"448
+"447
 [v _startUpcounter startUpcounter `(v  1 e 1 0 ]
 {
-"452
+"451
 [v startUpcounter@displaypos displaypos `ui  1 a 2 16 ]
 [v startUpcounter@actualpos actualpos `ui  1 a 2 14 ]
 "474
 } 0
-"719
+"697
 [v _lcd_print lcd_print `(v  1 e 1 0 ]
 {
 [v lcd_print@row row `uc  1 a 1 wreg ]
 [v lcd_print@row row `uc  1 a 1 wreg ]
 [v lcd_print@col col `uc  1 p 1 8 ]
 [v lcd_print@Data Data `uc  1 p 1 9 ]
-"725
+"703
 [v lcd_print@row row `uc  1 a 1 10 ]
-"727
+"705
 } 0
 "257
 [v _startTimer startTimer `(v  1 e 1 0 ]
@@ -467,7 +467,7 @@
 "425
 [v _stopMessage stopMessage `(v  1 e 1 0 ]
 {
-"442
+"441
 } 0
 "196
 [v _red_led red_led `(v  1 e 1 0 ]
@@ -516,7 +516,7 @@
 "530 C:\Users\sudar\MPLABXProjects\lcd_i2c.X\main.c
 [v _display display `(v  1 e 1 0 ]
 {
-"537
+"536
 [v display@minute_s_digit minute_s_digit `ui  1 a 2 20 ]
 [v display@minute_f_digit minute_f_digit `ui  1 a 2 18 ]
 [v display@hour_s_digit hour_s_digit `ui  1 a 2 16 ]
@@ -524,13 +524,13 @@
 "530
 [v display@buttonCounter buttonCounter `ui  1 p 2 8 ]
 [v display@update update `ui  1 p 2 10 ]
-"703
+"681
 } 0
-"708
+"686
 [v _inttochar inttochar `(uc  1 e 1 0 ]
 {
 [v inttochar@digit digit `ui  1 p 2 1 ]
-"714
+"692
 } 0
 "7 C:\Program Files\Microchip\xc8\v2.41\pic\sources\c99\common\lwmod.c
 [v ___lwmod __lwmod `(ui  1 e 2 0 ]
@@ -615,14 +615,15 @@
 {
 "39
 } 0
-"730 C:\Users\sudar\MPLABXProjects\lcd_i2c.X\main.c
+"708 C:\Users\sudar\MPLABXProjects\lcd_i2c.X\main.c
 [v _EEPROM_Mem_Initialise EEPROM_Mem_Initialise `(v  1 e 1 0 ]
 {
-"732
-[v EEPROM_Mem_Initialise@EEPROM_Mem_check EEPROM_Mem_check `ui  1 a 2 4 ]
-"731
-[v EEPROM_Mem_Initialise@eeprom_addr eeprom_addr `uc  1 a 1 6 ]
-"751
+"710
+[v EEPROM_Mem_Initialise@mem_check mem_check `ui  1 a 2 4 ]
+"709
+[v EEPROM_Mem_Initialise@eeprom_addr eeprom_addr `uc  1 a 1 7 ]
+[v EEPROM_Mem_Initialise@flag_addr flag_addr `uc  1 a 1 6 ]
+"734
 } 0
 "484
 [v _EEPROM_Write EEPROM_Write `(v  1 e 1 0 ]
